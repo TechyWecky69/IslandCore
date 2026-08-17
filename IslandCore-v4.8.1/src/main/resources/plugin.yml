@@ -1,0 +1,201 @@
+name: IslandCore
+version: '4.8.0'
+main: net.islandcore.plugin.IslandCorePlugin
+api-version: '1.21'
+author: YourName
+description: Per-player skyblock islands with a skill tree progression system.
+
+commands:
+  visit:
+    aliases: [v]
+    description: Visit another player's island.
+    usage: /visit <player>
+  home:
+    aliases: [h]
+    description: Return to your own island.
+    usage: /home
+  setspawn:
+    description: Set your island spawn at your current block.
+    usage: /setspawn
+  myisland:
+    aliases: [island, mi]
+    description: View your island dashboard - day, visit status, ratings and score.
+    usage: /myisland
+  stafftp:
+    description: Staff teleport to a player's island.
+    usage: /stafftp <player>
+  msg:
+    description: Send a private message to a player.
+    usage: /msg <player> <message>
+  reply:
+    aliases: [r]
+    description: Reply to the last person who messaged you.
+    usage: /reply <message>
+  invsee:
+    description: View another player's inventory.
+    usage: /invsee <player>
+  enderchest:
+    aliases: [ecsee]
+    description: View another player's ender chest.
+    usage: /enderchest <player>
+  kick:
+    description: Kick a player from the server.
+    usage: /kick <player> [reason]
+  ban:
+    description: Ban a player, optionally for a set duration.
+    usage: /ban <player> <reason> [duration]
+  toggle:
+    description: Toggle the item looting minigame on your island.
+    usage: /toggle
+  skilltree:
+    aliases: [st, tree]
+    description: Open your skill tree to unlock and manage item categories.
+    usage: /skilltree
+  rank:
+    description: Set or view player ranks.
+    usage: /rank <set|view> <player> [rank]
+  toggleislandvisits:
+    aliases: [tiv]
+    description: Toggle whether other players can visit your island.
+    usage: /toggleislandvisits
+  report:
+    description: Report a player.
+    usage: /report <player> <reason>
+  reportisland:
+    description: Report an island.
+    usage: /reportisland <player> <reason>
+  spawntoken:
+    description: Spawns Tree Tokens for the skill tree.
+    usage: /spawntoken <amount>
+  resetplayer:
+    description: Wipes a player's inventory, island and skill tree, then kicks them.
+    usage: /resetplayer <player>
+  rate:
+    description: Rate a player's island from 1 to 5 stars.
+    usage: /rate <player> <1-5>
+  topislands:
+    description: View the top-rated islands on the server.
+    usage: /topislands
+  resetratings:
+    description: Clears all community ratings for a player's island back to 0.
+    usage: /resetratings <player>
+  ownerrate:
+    description: Awards the owner star badge to a player's island.
+    usage: /ownerrate <player>
+  removeownerrate:
+    description: Removes the owner star badge from a player's island.
+    usage: /removeownerrate <player>
+  friend:
+    aliases: [friends, f]
+    description: Manage your friends list.
+    usage: /friend <add|remove|accept|deny|list> [player]
+  resetislandscore:
+    description: Reset a player's island score
+    usage: /resetislandscore <player>
+  trade:
+    description: Trade items with another player on the same island.
+    usage: /trade <player|accept|deny|cancel> [player]
+
+permissions:
+  islandcore.visit:
+    description: Allows visiting another player's island.
+    default: false
+  islandcore.home:
+    description: Allows returning to the player's own island.
+    default: false
+  islandcore.setspawn:
+    description: Allows setting your island spawn.
+    default: false
+  islandcore.myisland:
+    description: Allows viewing your island dashboard with /myisland.
+    default: false
+  islandcore.stafftp:
+    description: Allows staff to teleport to an island.
+    default: false
+  islandcore.msg:
+    description: Allows private messaging players.
+    default: false
+  islandcore.reply:
+    description: Allows replying to private messages.
+    default: false
+  islandcore.toggle:
+    description: Allows toggling the island loot minigame.
+    default: false
+  islandcore.skilltree:
+    description: Allows opening and using the skill tree.
+    default: false
+  islandcore.toggleislandvisits:
+    description: Allows toggling island visits on or off with /toggleislandvisits.
+    default: false
+  islandcore.invsee:
+    description: Allows viewing another player's inventory.
+    default: false
+  islandcore.enderchest:
+    description: Allows viewing another player's ender chest.
+    default: false
+  islandcore.kick:
+    description: Allows kicking players.
+    default: false
+  islandcore.ban:
+    description: Allows banning players.
+    default: false
+  islandcore.bypass:
+    description: Bypasses island protection everywhere.
+    default: false
+  islandcore.rank.manage:
+    description: Allows setting and viewing player ranks.
+    default: false
+  islandcore.tokens.spawn:
+    description: Allows spawning Tree Tokens with /spawntoken.
+    default: false
+  islandcore.unban:
+    description: Reserved for unbanning players (referenced by rank definitions).
+    default: false
+  islandcore.resetplayer:
+    description: Allows wiping a player's inventory, island and skill tree with /resetplayer.
+    default: false
+  islandcore.rate:
+    description: Allows rating another player's island with /rate.
+    default: false
+  islandcore.topislands:
+    description: Allows viewing the top-rated islands leaderboard.
+    default: false
+  islandcore.resetratings:
+    description: Allows clearing all community ratings for an island back to 0 with /resetratings.
+    default: false
+  islandcore.ownerrate:
+    description: Allows awarding or removing the owner star badge with /ownerrate and /removeownerrate.
+    default: false
+  islandcore.resetislandscore:
+    description: Allows use of /resetislandscore
+
+
+  islandcore.*:
+    description: Grants every IslandCore permission.
+    default: false
+    children:
+      islandcore.visit: true
+      islandcore.home: true
+      islandcore.setspawn: true
+      islandcore.myisland: true
+      islandcore.stafftp: true
+      islandcore.msg: true
+      islandcore.reply: true
+      islandcore.toggle: true
+      islandcore.skilltree: true
+      islandcore.toggleislandvisits: true
+      islandcore.invsee: true
+      islandcore.enderchest: true
+      islandcore.kick: true
+      islandcore.ban: true
+      islandcore.bypass: true
+      islandcore.rank.manage: true
+      islandcore.tokens.spawn: true
+      islandcore.unban: true
+      islandcore.resetplayer: true
+      islandcore.rate: true
+      islandcore.topislands: true
+      islandcore.resetratings: true
+      islandcore.ownerrate: true
+      islandcore.resetislandscore: true
+

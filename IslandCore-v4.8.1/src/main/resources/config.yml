@@ -1,0 +1,129 @@
+# IslandCore configuration
+
+# World naming: each player's island world is named "<world-prefix><uuid>",
+# matching the original Skript's "worlds/%player's uuid%" convention.
+# Multiverse must be installed and configured to create/load worlds under this path.
+world-prefix: "worlds/"
+
+# The original script hard-coded a single player name ("ILiveOffCaffine") that
+# bypasses all protection (PvP, block break/place, item pickup, interaction).
+# That still works here for parity, but the recommended way to grant bypass is
+# the "islandcore.bypass" permission node - give it to staff instead of editing
+# this name.
+legacy-bypass-name: "ILiveOffCaffine"
+
+# Multiverse console commands run when a new island world is created.
+# {world} is replaced with "<world-prefix><uuid>".
+world-create-commands:
+  - "mvclone bedrock {world}"
+  - "mvgamerule keepInventory true {world}"
+  - "mvgamerule doImmediateRespawn true {world}"
+
+# How often (seconds) the loot task fires while looting is toggled on.
+loot-interval-seconds: 30
+
+# /toggle looting can choose from every real Minecraft item by default.
+# Only items listed below are excluded. Uses Bukkit Material names.
+#
+# Add/remove entries here to control exactly what can be given by the loot
+# minigame. The plugin automatically ignores non-item Material entries.
+loot-prohibited-items:
+  - AIR
+  - BEDROCK
+  - BARRIER
+  - COMMAND_BLOCK
+  - CHAIN_COMMAND_BLOCK
+  - REPEATING_COMMAND_BLOCK
+  - COMMAND_BLOCK_MINECART
+  - STRUCTURE_BLOCK
+  - STRUCTURE_VOID
+  - JIGSAW
+  - LIGHT
+  - SPAWNER
+  - DEBUG_STICK
+  - KNOWLEDGE_BOOK
+  - END_PORTAL_FRAME
+  - END_PORTAL
+  - NETHER_PORTAL
+
+
+# Island world border. The border is a 200x200 square centred on each
+# island world's own spawn point.
+island-border-size: 200
+
+# Tab-list branding.
+tablist:
+  title: "&b&lBlock Bound"
+  ip: "&7play.blockbound.net"
+
+# AFK protection. Players who do not change block position for this many
+# minutes are kicked from the server. Camera/head movement does not count.
+afk-kick-minutes: 5
+
+# Islands stay loaded briefly after becoming empty. This prevents rapid load/unload
+# cycles when players move between islands.
+island-unload-delay-seconds: 60
+island-maintenance:
+  interval-seconds: 30
+
+# Entity limits are enforced separately for each loaded island.
+entity-limits:
+  enabled: true
+  max-total: 150
+  max-mobs: 80
+  max-villagers: 20
+  max-minecarts: 20
+  max-item-entities: 100
+
+# Redstone protection is deliberately rate-based: normal redstone continues to
+# work, while pathological clocks/hoppers are throttled per island.
+redstone-limits:
+  max-redstone-events-per-second: 500
+  max-piston-events-per-second: 30
+  max-hopper-transfers-per-second: 100
+
+# Old dropped items are removed from loaded island worlds. This also prevents
+# thousands of items building up around farms.
+item-cleanup:
+  interval-seconds: 60
+  max-age-seconds: 300
+
+# Sidebar scoreboard.
+scoreboard:
+  refresh-seconds: 1
+  server-name: "Block Bound"
+  flash-colours:
+    - "&b"
+    - "&3"
+    - "&9"
+    - "&5"
+    - "&d"
+    - "&b"
+
+# How often unsaved loot-pull counters are flushed to disk. Keeping this above
+# zero avoids writing playerdata.yml on every random reward.
+data-save-interval-seconds: 300
+
+# Island ratings: a 1-5 star community rating (visitors vote) plus an
+# automatic 0-100 Island Score nobody can vote-brigade.
+ratings:
+  # A visitor must have spent at least this long on an island during the
+  # current visit before they're allowed to rate it (or be prompted to).
+  # Stops drive-by 1-star griefing and drive-by 5-star boosting from alts.
+  min-visit-seconds: 30
+
+  # A visitor's vote is stored once and overwritten on re-vote (not stacked),
+  # so their rating always reflects their current opinion. This just limits
+  # how often that overwrite can happen, so one visitor can't rapidly flip
+  # a rating back and forth.
+  revote-cooldown-hours: 24
+
+  # Weighting for the automatic Island Score (0-100). Community votes have
+  # no effect on this number - it's built entirely from skill tree progress,
+  # island age and unique visitor count, so brand new islands still show a
+  # fair score before anyone has rated them.
+  auto-score:
+    # Island day at which the "age" component of the score maxes out.
+    max-day: 60
+    # Unique visitor count at which the "popularity" component maxes out.
+    max-unique-visitors: 20
