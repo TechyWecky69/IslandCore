@@ -1,0 +1,24 @@
+name: IslandCore
+version: '${project.version}'
+main: com.islandcore.anticheat.IslandCoreAntiCheat
+api-version: '1.21'
+author: IslandCore
+description: Lightweight anticheat and basic connection protection built for IslandCore.
+
+commands:
+  islandcore:
+    description: Main IslandCore AntiCheat command.
+    usage: /<command> [reload|alerts|vl|reset|check]
+    aliases: [icac, anticheat, ac]
+    permission: islandcore.admin
+
+permissions:
+  islandcore.admin:
+    description: Access to IslandCore AntiCheat admin commands.
+    default: op
+  islandcore.alerts:
+    description: Receive real-time anticheat violation alerts.
+    default: op
+  islandcore.bypass:
+    description: Bypass all anticheat checks. Use only for trusted staff/testing.
+    default: false

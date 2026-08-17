@@ -1,0 +1,71 @@
+# IslandCore AntiCheat configuration
+
+# Violation levels (VL) decay over time when a player stops triggering a
+# check, so old flags from lag or a one-off false positive don't linger
+# forever and eventually cause a punishment.
+violations:
+  decay-amount: 1.0
+  decay-interval-seconds: 3
+  decay-delay-seconds: 8   # how long since the last flag before decay starts
+
+checks:
+  speed:
+    enabled: true
+    buffer: 1.4        # multiplier over legit max speed before flagging (higher = more lenient)
+    sample-size: 3      # consecutive suspicious moves needed before a flag fires
+    setback: true
+  fly:
+    enabled: true
+    max-air-ticks: 10
+    setback: true
+  nofall:
+    enabled: true
+  jesus:
+    enabled: true
+    max-ticks: 5
+  rotation:
+    enabled: true
+  reach:
+    enabled: true
+    max-distance: 3.3
+  killaura:
+    enabled: true
+    max-angle: 60.0
+    multi-target-window-ms: 100
+    multi-target-count: 2
+  autoclicker:
+    enabled: true
+    max-cps: 20
+  fastbreak:
+    enabled: true
+    min-interval-ms: 90
+  dupeclick:
+    enabled: true
+    min-interval-ms: 30   # min ms between two clicks on the same slot/item before it's flagged as a replayed click
+  nestedcontainer:
+    enabled: true         # blocks placing a filled shulker box inside another open shulker box
+
+# Punishment thresholds, applied per-check violation level (VL).
+# %player% and %check% placeholders are replaced automatically.
+# Use "command: alert" for a threshold that should only notify staff
+# (every violation already sends an alert regardless of this list).
+punishments:
+  - vl: 8
+    command: alert
+  - vl: 20
+    command: "kick %player% &cKicked by IslandCore AntiCheat &7(%check%)"
+  - vl: 45
+    command: "ban %player% &cBanned by IslandCore AntiCheat - repeated cheat detection &7(%check%)"
+
+alerts:
+  format: "&8[&bIslandCore&8] &e%player% &7failed &b%check% &7(VL &c%vl%&7) &8- &7%details%"
+
+# Basic connection throttling. This is NOT real DDoS protection (that has to
+# be handled at the network layer, before traffic ever reaches the Minecraft
+# server process) but it does stop simple join-flood / bot-spam tools at the
+# application layer. See the README for real DDoS mitigation options.
+connection-protection:
+  enabled: true
+  max-attempts: 4
+  window-ms: 10000
+  kick-message: "&cToo many connection attempts. Please wait a moment and try again."
