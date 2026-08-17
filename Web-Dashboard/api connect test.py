@@ -1,7 +1,7 @@
 import requests
 
-API = "http://127.0.0.1:8765"
-APPLICATION_KEY = "VzSlJ-xWH5g7Ii3LyfH9R1qM_HzbsreAlfzAaJWBu3M"
+API = "..."
+APPLICATION_KEY = "..."
 
 username = input("Username: ")
 password = input("Password: ")
