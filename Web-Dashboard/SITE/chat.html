@@ -1,0 +1,91 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IslandCore • Chat</title><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script></head>
+<body><header class="top"><div class="logo">Island<span>Core</span></div><nav><a href="index.html">Dashboard</a><a class="active" href="chat.html">Chat</a><a href="trades.html">Trades</a></nav><div class="right"><a href="#" data-logout>Logout</a></div></header>
+<main class="wrap"><section class="card">
+<h2>Chat log</h2>
+<div class="chat-controls">
+  <select id="playerFilter"><option value="">All players</option></select>
+  <input type="datetime-local" id="jumpTime" step="1">
+  <button type="button" class="btn" id="jumpBtn">Jump to time</button>
+  <button type="button" class="btn" id="clearBtn">Clear filter</button>
+  <span class="muted small" id="chatSummary"></span>
+</div>
+<pre id="chat" class="terminal chat">Loading chat…</pre>
+</section></main>
+<script>
+const el=document.getElementById('chat');
+const playerFilter=document.getElementById('playerFilter');
+const jumpTime=document.getElementById('jumpTime');
+const jumpBtn=document.getElementById('jumpBtn');
+const clearBtn=document.getElementById('clearBtn');
+const chatSummary=document.getElementById('chatSummary');
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+let allMessages=[];
+let knownPlayers=[];
+
+function rebuildPlayerOptions(){
+  const players=[...new Set(allMessages.filter(x=>x.player).map(x=>x.player))].sort((a,b)=>a.localeCompare(b));
+  if(players.join('|')===knownPlayers.join('|'))return; // avoid flicker/losing focus when nothing changed
+  knownPlayers=players;
+  const current=playerFilter.value;
+  playerFilter.innerHTML='<option value="">All players</option>'+players.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('');
+  if(players.includes(current))playerFilter.value=current;
+}
+
+function render(forceScrollBottom){
+  // Only auto-scroll to the newest message if the user is already near the
+  // bottom (or we're told to). Otherwise a periodic refresh would yank them
+  // away from wherever "Jump to time" (or manual scrolling) just put them.
+  const nearBottom=forceScrollBottom || (el.scrollHeight-el.scrollTop-el.clientHeight<60);
+
+  const selected=playerFilter.value;
+  const filtered=selected?allMessages.filter(x=>x.player===selected):allMessages;
+  el.innerHTML=filtered.map(x=>{
+    let d=new Date(x.time);
+    return '<span class="chat-line" data-time="'+x.time+'"><span class="muted">['+d.toLocaleTimeString()+']</span> '+esc(x.text)+'</span>';
+  }).join('\n');
+  chatSummary.textContent=selected
+    ? filtered.length+' message'+(filtered.length===1?'':'s')+' from '+selected
+    : filtered.length+' message'+(filtered.length===1?'':'s');
+  if(nearBottom)el.scrollTop=el.scrollHeight;
+}
+
+async function refresh(){
+  let r=await DashboardAPI.request('/api/chat');
+  if(r.status===401){location='/login';return}
+  allMessages=await r.json();
+  rebuildPlayerOptions();
+  render();
+}
+
+playerFilter.addEventListener('change',()=>render(true));
+
+clearBtn.addEventListener('click',()=>{
+  playerFilter.value='';
+  jumpTime.value='';
+  render(true);
+});
+
+jumpBtn.addEventListener('click',()=>{
+  if(!jumpTime.value){chatSummary.textContent='Pick a date/time first.';return}
+  const target=new Date(jumpTime.value).getTime();
+  if(isNaN(target)){chatSummary.textContent='Invalid date/time.';return}
+
+  const lines=[...el.querySelectorAll('.chat-line')];
+  if(!lines.length){chatSummary.textContent='No messages loaded to jump to.';return}
+
+  // First line at/after the target time, or the last line if the target is later
+  // than everything currently loaded (chat history only goes back as far as
+  // chat-history-lines in config.yml keeps in memory).
+  let match=lines.find(li=>Number(li.dataset.time)>=target) || lines[lines.length-1];
+
+  match.scrollIntoView({block:'center'});
+  lines.forEach(li=>li.classList.remove('chat-line-hit'));
+  match.classList.add('chat-line-hit');
+  setTimeout(()=>match.classList.remove('chat-line-hit'),2500);
+});
+
+refresh();
+setInterval(refresh,1000);
+</script></body></html>

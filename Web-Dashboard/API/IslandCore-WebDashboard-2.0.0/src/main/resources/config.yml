@@ -1,0 +1,38 @@
+# IslandCore Dashboard API 2.0.0
+# The API is separate from the website. The website/app calls this API.
+host: "127.0.0.1"
+port: 8765
+
+# TLS protects login credentials and API data in transit.
+tls:
+  # Local development: disable TLS so the browser does not reject the self-signed certificate.
+  enabled: false
+  keystore: "plugins/IslandCoreWebDashboard/dashboard.p12"
+  # Change this. It protects the private TLS key inside dashboard.p12.
+  keystore-password: "CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD"
+
+api:
+  # A separate application secret. Keep it private in the eventual desktop/mobile app.
+  # The plugin generates one automatically if this is blank/too short.
+  application-key: ""
+  # Exact origin of the separate website. For local development you can use "*".
+  # For production, set this to your website/app origin, e.g. "https://dashboard.example.com".
+  allowed-origin: "*"
+
+# Users. On first startup, old plaintext 'password:' entries are automatically
+# replaced with salted PBKDF2-HMAC-SHA256 hashes. New entries should use password: once;
+# the plugin will hash them and remove the plaintext.
+users:
+  - username: "ethan"
+    password: "9SaffronRoad##"
+
+# Metrics refresh interval. 20 ticks = 1 second.
+metrics-interval-ticks: 20
+
+# Chat history retained in memory.
+chat-history-lines: 500
+
+hidden-worlds: []
+
+trade-logs-dir: "plugins/IslandCore/tradelogs"
+trade-logs-max-entries: 2000

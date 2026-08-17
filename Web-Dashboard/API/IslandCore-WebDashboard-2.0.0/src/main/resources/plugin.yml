@@ -1,0 +1,14 @@
+name: IslandCoreWebDashboard
+version: 2.0.0
+main: net.islandcore.webdashboard.WebDashboardPlugin
+api-version: '1.21'
+author: IslandCore
+description: Secure API for the IslandCore web dashboard.
+commands:
+  webdashboard:
+    description: Shows dashboard API status.
+    usage: /webdashboard
+permissions:
+  webdashboard.use:
+    description: View dashboard API status in-game.
+    default: op

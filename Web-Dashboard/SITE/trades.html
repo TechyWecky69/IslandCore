@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IslandCore • Trades</title><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script></head>
+<body><header class="top"><div class="logo">Island<span>Core</span></div><nav><a href="index.html">Dashboard</a><a href="chat.html">Chat</a><a class="active" href="trades.html">Trades</a></nav><div class="right"><a href="#" data-logout>Logout</a></div></header>
+<main class="wrap"><section class="card">
+<h2>Trade logs</h2>
+<div class="chat-controls">
+  <select id="playerAFilter"><option value="">Any player</option></select>
+  <select id="playerBFilter"><option value="">Any player</option></select>
+  <input type="datetime-local" id="fromTime" step="1" title="From">
+  <input type="datetime-local" id="toTime" step="1" title="To">
+  <button type="button" class="btn" id="clearBtn">Clear filters</button>
+  <button type="button" class="btn sort-btn" id="sortBtn"><span class="sort-arrow" id="sortArrow">▼</span><span id="sortLabel">Newest first</span></button>
+  <span class="muted small" id="tradeSummary"></span>
+</div>
+<div class="trades-scroll">
+<table>
+<thead><tr><th>Time</th><th>Player A</th><th>Gave</th><th>Player B</th><th>Gave</th></tr></thead>
+<tbody id="trades"><tr><td colspan="5" class="muted">Loading trade logs…</td></tr></tbody>
+</table>
+</div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id);
+const playerAFilter=$('playerAFilter'),playerBFilter=$('playerBFilter');
+const fromTime=$('fromTime'),toTime=$('toTime');
+const clearBtn=$('clearBtn'),sortBtn=$('sortBtn'),sortArrow=$('sortArrow'),sortLabel=$('sortLabel');
+const tradeSummary=$('tradeSummary'),tbody=$('trades');
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const humanize=m=>String(m||'UNKNOWN').toLowerCase().split('_').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+
+let allTrades=[];
+let knownPlayers=[];
+let sortDesc=true; // newest first by default
+
+function rebuildPlayerOptions(){
+  const players=[...new Set(allTrades.flatMap(t=>[t.playerA&&t.playerA.name,t.playerB&&t.playerB.name]).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  if(players.join('|')===knownPlayers.join('|'))return; // avoid flicker/losing focus when nothing changed
+  knownPlayers=players;
+  const curA=playerAFilter.value,curB=playerBFilter.value;
+  const opts='<option value="">Any player</option>'+players.map(p=>'<option value="'+esc(p)+'">'+esc(p)+'</option>').join('');
+  playerAFilter.innerHTML=opts;playerBFilter.innerHTML=opts;
+  if(players.includes(curA))playerAFilter.value=curA;
+  if(players.includes(curB))playerBFilter.value=curB;
+}
+
+function matchesPlayers(t){
+  const a=playerAFilter.value,b=playerBFilter.value;
+  const nameA=t.playerA&&t.playerA.name,nameB=t.playerB&&t.playerB.name;
+  if(a&&b){
+    if(a===b)return nameA===a||nameB===a;
+    return (nameA===a&&nameB===b)||(nameA===b&&nameB===a);
+  }
+  if(a)return nameA===a||nameB===a;
+  if(b)return nameA===b||nameB===b;
+  return true;
+}
+
+function matchesDate(t){
+  if(fromTime.value){const from=new Date(fromTime.value).getTime();if(!isNaN(from)&&t.time<from)return false}
+  if(toTime.value){const to=new Date(toTime.value).getTime();if(!isNaN(to)&&t.time>to)return false}
+  return true;
+}
+
+function itemsCell(player){
+  if(!player||!player.itemsGiven||!player.itemsGiven.length)return '<span class="muted">Gave nothing</span>';
+  return '<div class="items-given">'+player.itemsGiven.map(it=>'<span class="item-pill">'+it.amount+'x '+esc(humanize(it.material))+'</span>').join('')+'</div>';
+}
+
+function render(){
+  const filtered=allTrades.filter(t=>matchesPlayers(t)&&matchesDate(t));
+  filtered.sort((x,y)=>sortDesc?y.time-x.time:x.time-y.time);
+
+  tbody.innerHTML=filtered.length?filtered.map(t=>{
+    const d=new Date(t.time);
+    const nameA=t.playerA&&t.playerA.name?esc(t.playerA.name):'<span class="muted">unknown</span>';
+    const nameB=t.playerB&&t.playerB.name?esc(t.playerB.name):'<span class="muted">unknown</span>';
+    return '<tr><td class="muted">'+d.toLocaleString()+'</td><td><b>'+nameA+'</b></td><td>'+itemsCell(t.playerA)+'</td><td><b>'+nameB+'</b></td><td>'+itemsCell(t.playerB)+'</td></tr>';
+  }).join('') : '<tr><td colspan="5" class="muted">No trades match the current filters.</td></tr>';
+
+  tradeSummary.textContent=filtered.length+' trade'+(filtered.length===1?'':'s')+(filtered.length!==allTrades.length?' (of '+allTrades.length+')':'');
+}
+
+async function refresh(){
+  let r=await DashboardAPI.request('/api/trades');
+  if(r.status===401){location='/login';return}
+  allTrades=await r.json();
+  rebuildPlayerOptions();
+  render();
+}
+
+playerAFilter.addEventListener('change',render);
+playerBFilter.addEventListener('change',render);
+fromTime.addEventListener('change',render);
+toTime.addEventListener('change',render);
+
+clearBtn.addEventListener('click',()=>{
+  playerAFilter.value='';playerBFilter.value='';fromTime.value='';toTime.value='';
+  render();
+});
+
+sortBtn.addEventListener('click',()=>{
+  sortDesc=!sortDesc;
+  sortLabel.textContent=sortDesc?'Newest first':'Oldest first';
+  sortArrow.classList.toggle('asc',!sortDesc);
+  render();
+});
+
+refresh();setInterval(refresh,5000);
+</script></body></html>

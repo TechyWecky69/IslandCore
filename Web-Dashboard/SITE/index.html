@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IslandCore • Dashboard</title><link rel="stylesheet" href="style.css"><script src="config.js"></script><script src="app.js"></script></head>
+<body>
+<header class="top"><div class="logo">Island<span>Core</span></div><nav><a class="active" href="index.html">Dashboard</a><a href="chat.html">Chat</a><a href="trades.html">Trades</a></nav><div class="right"><span class="dot"></span>Live · <a href="#" data-logout>Logout</a></div></header>
+<main class="wrap"><div class="grid">
+<section class="card"><h2>Memory</h2><div class="metric" id="mem">—</div><div class="muted small" id="memsub">—</div><div class="bar" style="margin-top:12px"><i id="membar" style="width:0%"></i></div><canvas id="memchart"></canvas></section>
+<section class="card"><h2>CPU usage</h2><div class="metric" id="cpu">—</div><div class="muted small">System CPU load</div><div class="bar" style="margin-top:12px"><i id="cpubar"></i></div><canvas id="cpuchart"></canvas></section>
+<section class="card"><h2>TPS</h2><div class="metric" id="tpsMetric">—</div><div class="muted small">Ticks per second · 20.00 is ideal</div><div class="bar" style="margin-top:12px"><i id="tpsbar"></i></div><canvas id="tpschart"></canvas></section>
+<section class="card"><h2>Players</h2><div class="metric" id="playersCount">—</div><div class="muted small">Online players</div><div class="players players-scroll" id="players" style="margin-top:14px"></div></section>
+<section class="card"><h2>Loaded worlds</h2><div class="worlds-scroll"><table><thead><tr><th>World</th><th>Path</th><th>Players</th><th>Chunks</th><th>Entities</th></tr></thead><tbody id="worlds"></tbody></table></div></section>
+<section class="card"><h2>Server health</h2><div class="statrow"><span class="muted">TPS</span><b id="tps">—</b></div><div class="bar"><i id="tpsbarHealth"></i></div><div class="statrow"><span class="muted">Uptime</span><b id="uptime">—</b></div><div class="statrow"><span class="muted">Loaded chunks</span><b id="chunks">—</b></div><div class="statrow"><span class="muted">Entities</span><b id="entities">—</b></div></section>
+<section class="card"><h2>JVM heap</h2><div class="metric" id="heap">—</div><div class="muted small" id="heapsub">—</div><div class="bar" style="margin-top:12px"><i id="heapbar"></i></div></section>
+<section class="card"><h2>Runtime</h2><div class="statrow"><span class="muted">Java heap committed</span><b id="committed">—</b></div><div class="statrow"><span class="muted">Network interfaces up</span><b id="net">—</b></div><div class="statrow"><span class="muted">Chat messages seen</span><b id="chatcount">—</b></div><div class="statrow"><span class="muted">Max players</span><b id="maxplayers">—</b></div></section>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);
+const histories={mem:[],cpu:[],tps:[]};
+const fmt=n=>{if(n<1024*1024)return (n/1024).toFixed(0)+' KB';if(n<1024**3)return (n/1024/1024).toFixed(1)+' MB';return (n/1024**3).toFixed(2)+' GB'};
+const time=ms=>{let s=Math.floor(ms/1000),d=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return (d?d+'d ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')};
+function drawChart(id,values,max){
+  const c=$(id),rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1,w=Math.max(1,rect.width),h=180;
+  c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c.style.height=h+'px';
+  const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  x.strokeStyle='#2b333d';x.lineWidth=1;
+  for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke()}
+  if(values.length<2)return;
+  x.beginPath();values.forEach((v,i)=>{let px=i*w/(values.length-1),py=h-(Math.max(0,Math.min(max,v))/max)*h;i?x.lineTo(px,py):x.moveTo(px,py)});
+  x.strokeStyle='#4f9cff';x.lineWidth=2;x.stroke();
+}
+function draw(){drawChart('memchart',histories.mem,100);drawChart('cpuchart',histories.cpu,100);drawChart('tpschart',histories.tps,20)}
+async function refresh(){
+  try{
+    let r=await DashboardAPI.request('/api/metrics');if(r.status===401){location='/login';return}
+    let d=await r.json(),p=d.maxMemory>0?d.usedMemory/d.maxMemory*100:0,hp=d.heapMax>0?d.heapUsed/d.heapMax*100:0;
+    histories.mem.push(p);histories.cpu.push(d.cpuUsage);histories.tps.push(d.tps);
+    Object.values(histories).forEach(a=>{if(a.length>60)a.shift()});
+    $('mem').textContent=fmt(d.usedMemory);$('memsub').textContent=fmt(d.maxMemory)+' max · '+p.toFixed(1)+'% used';$('membar').style.width=p+'%';
+    $('cpu').textContent=d.cpuUsage.toFixed(1)+'%';$('cpubar').style.width=Math.min(100,Math.max(0,d.cpuUsage))+'%';
+    $('tpsMetric').textContent=d.tps.toFixed(2);$('tpsbar').style.width=(d.tps/20*100)+'%';
+    $('heap').textContent=fmt(d.heapUsed);$('heapsub').textContent=fmt(d.heapMax)+' max';$('heapbar').style.width=hp+'%';
+    $('playersCount').textContent=d.onlinePlayers+' / '+d.maxPlayers;
+    $('players').innerHTML=d.players.length?d.players.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="muted">No players online</span>';
+    $('worlds').innerHTML=d.worlds.map(w=>'<tr><td><b>'+esc(w.name)+'</b></td><td class="muted">'+esc(w.path)+'</td><td>'+w.players+'</td><td>'+w.chunks+'</td><td>'+w.entities+'</td></tr>').join('');
+    $('tps').textContent=d.tps.toFixed(2);$('tpsbarHealth').style.width=(d.tps/20*100)+'%';$('uptime').textContent=time(d.uptimeMillis);$('chunks').textContent=d.chunks;$('entities').textContent=d.entities;
+    $('committed').textContent=fmt(d.committedMemory);$('net').textContent=d.networkInterfaces;$('chatcount').textContent=d.chatMessages;$('maxplayers').textContent=d.maxPlayers;draw();
+  }catch(e){console.error(e)}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+window.onresize=draw;refresh();setInterval(refresh,1000);
+</script></body></html>

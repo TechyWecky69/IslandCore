@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IslandCore • Sign in</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script><script src="app.js"></script>
+</head>
+<body class="login-page">
+<main class="login">
+  <div class="login-glow login-glow-one"></div><div class="login-glow login-glow-two"></div>
+  <div class="login-grid-lines" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <form class="card login-card" id="loginForm">
+    <div class="login-brand"><div class="brand-mark">I</div><div><div class="logo">Island<span>Core</span></div><div class="muted small">Web Dashboard</div></div></div>
+    <div class="login-heading"><h1>Welcome back</h1><p class="muted">Sign in to manage and monitor your server.</p></div>
+    <div class="login-error" id="loginError" style="display:none"><span class="login-error-icon">!</span><span id="errorText">Invalid username or password.</span></div>
+    <div class="field-group">
+      <label class="field-label" for="username">Username</label>
+      <div class="field-wrap" style="margin-bottom:14px"><input id="username" type="text" placeholder="Enter your username" autocomplete="username" required autofocus>
+        <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+      </div>
+      <label class="field-label" for="password">Password</label>
+      <div class="field-wrap"><input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+        <button type="button" class="field-icon field-icon-btn" id="togglePw" tabindex="-1" aria-label="Toggle password visibility">
+          <svg id="eyeOpen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="eyeClosed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1 2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn login-btn" type="submit"><span>Sign in</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+    <p class="login-note">Credentials are sent only over the encrypted API connection.</p>
+  </form>
+  <div class="login-status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
+</main>
+<script>
+if (DashboardAPI.isLoggedIn()) location.href="index.html";
+const $=id=>document.getElementById(id);
+$('togglePw').addEventListener('click',()=>{
+  const pw=$('password'),open=$('eyeOpen'),closed=$('eyeClosed');
+  const show=pw.type==='password'; pw.type=show?'text':'password'; open.style.display=show?'none':''; closed.style.display=show?'':'none';
+});
+async function ping(){
+  const ok=await dashboardHealth();
+  document.querySelector('.login-status .dot').style.background=ok?'var(--good)':'var(--bad)';
+  $('statusText').textContent=ok?'Server online':'Server unreachable';
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const err=$('loginError'); err.style.display='none';
+  try{
+    const r=await DashboardAPI.request('/api/auth/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:$('username').value,password:$('password').value})
+    });
+    const d=await r.json();
+    if(!r.ok){$('errorText').textContent=d.error||'Sign in failed.';err.style.display='flex';return;}
+    sessionStorage.setItem('dashboard_token',d.token);
+    sessionStorage.setItem('dashboard_user',$('username').value);
+    location.href='index.html';
+  }catch(_){
+    $('errorText').textContent='Could not connect to the dashboard API.';
+    err.style.display='flex';
+  }
+});
+ping();
+</script>
+</body></html>
